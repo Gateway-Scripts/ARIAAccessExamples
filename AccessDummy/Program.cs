@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using Newtonsoft.Json;
+using services.varian.com.AriaWebConnect.Link;
 using services.varian.com.Patient.Documents;
 using VMS.OIS.ARIAExternal.WebServices.Documents.Contracts;
 
@@ -23,35 +24,41 @@ namespace AccessDummy
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             httpClient.Timeout = TimeSpan.FromSeconds(120);
 
-            var requestJson = "{\"__type\":\"GetDocumentsRequest:http://services.varian.com/Patient/Documents\",\"PatientId\":{\"ID1\":\"007\",\"PtId\":null}}";
+            //var requestJson = "{\"__type\":\"GetDocumentsRequest:http://services.varian.com/Patient/Documents\",\"PatientId\":{\"ID1\":\"007\",\"PtId\":null}}";
             //var requestJson = "{\"__type:\":\"DocumentsRequest:http://services.varian.com/Patient.Documents\",
             //var requestJson = "{\"__type\":\"DocumentsRequest:http://services.varian.com/Patient.Documents\",\"PatientId\":{\"ID1\":\"007\",\"PtId\":null}}";
             //var requestJson = "{\"__type\":\"GetPatientsRequest:http://services.varian.com/AriaWebConnect/Link\",\"Attributes\":null,\"PatientId1\":\"007\"}";
             //var requestJson = "{\"__type\":\"GetPatientsRequest:http://services.varian.com/AriaWebConnect/Link\",\"PatientId1\":{\"Value\":\"007\"}}";
-           // var requestJson = "{\"__type\":\"GetLicenseFeaturesRequest:http://services.varian.com/Foundation/SF/Infrastructure\",\"IncludeExpired\":true }";
+            // var requestJson = "{\"__type\":\"GetLicenseFeaturesRequest:http://services.varian.com/Foundation/SF/Infrastructure\",\"IncludeExpired\":true }";
             //var requestJson = "{\"__type\":\"GetLicenseFeaturesRequest:http://services.varian.com/Foundation/SF/Infrastructure\",\"IncludeExpired\":{\"Value\":true}}";
             //var requestJson = "{\"__type\":\"ServiceMetadataRequest:http://services.varian.com/Foundation/SF/Infrastructure\",\"IncludeExpired\":{\"Value\":\"true\"}";
-            string responseJson = GetJsonResponse(gatewayUrl, requestJson, dockey, httpClient);
-            DocumentsResponse dr = JsonConvert.DeserializeObject<DocumentsResponse>(responseJson);
-            DocumentResponse dr1 = dr.Documents[0];
-            GetDocumentRequest drequest = new GetDocumentRequest()
-            {
-                Attributes = null,
-                PatientId = new VMS.OIS.ARIALocal.WebServices.Document.Contracts.PatientIdentifier
-                {
-                    PtId = dr1.PtId
-                },
-                PatientVisitId = dr1.PtVisitId,
-                VisitNoteId =dr1.PtVisitNoteId// dr.Documents[0].VisitNoteId
-            };
-            var requestDoc = "{\"__type\":\"GetDocumentRequest:http://services.varian.com/Patient/Documents\"," + JsonConvert.SerializeObject(drequest).TrimStart('{');
-            GetJsonResponse(gatewayUrl, requestDoc, dockey, httpClient);
-
+            //var requestJson = "{\"__type\":\"GetMachineListRequest:http://services.varian.com/AriaWebConnect/Link\"}";
+            var requestJson = "{\"__type\":\"GetDoctorsInfoRequest:http://services.varian.com/AriaWebConnect/Link\",\"DoctorId\":{\"Value\":\"11111\"}";
+            string responseJson = GetJsonResponse(gatewayUrl, requestJson, aakey, httpClient);
+            //string responseJson = GetJsonResponse(gatewayUrl, requestJson, dockey, httpClient);
+            //DocumentsResponse dr = JsonConvert.DeserializeObject<DocumentsResponse>(responseJson);
+            //DocumentResponse dr1 = dr.Documents[0];
+            //GetDocumentRequest drequest = new GetDocumentRequest()
+            //{
+            //    Attributes = null,
+            //    PatientId = new VMS.OIS.ARIALocal.WebServices.Document.Contracts.PatientIdentifier
+            //    {
+            //        PtId = dr1.PtId
+            //    },
+            //    PatientVisitId = dr1.PtVisitId,
+            //    VisitNoteId = dr1.PtVisitNoteId// dr.Documents[0].VisitNoteId
+            //};
+            //var requestDoc = "{\"__type\":\"GetDocumentRequest:http://services.varian.com/Patient/Documents\"," + JsonConvert.SerializeObject(drequest).TrimStart('{');
+            //GetJsonResponse(gatewayUrl, requestDoc, dockey, httpClient);
+            //DoctorReturn
+            GetDoctorsInfoResponse getDoctorsInfoResponse = JsonConvert.DeserializeObject<GetDoctorsInfoResponse>(responseJson);
+            Console.WriteLine($"Physician: {getDoctorsInfoResponse.DoctorsInfo[0].LastName.Value}, {getDoctorsInfoResponse.DoctorsInfo[0].FirstName.Value} {getDoctorsInfoResponse.DoctorsInfo[0].Honorific.Value}");
             Console.ReadLine();
         }
 
         public static string GetJsonResponse(string gatewayUrl, string requestJson, string akey, HttpClient httpClient)
         {
+
             using (var requestMessage = new HttpRequestMessage
             {
                 RequestUri = new Uri(gatewayUrl),
@@ -59,7 +66,8 @@ namespace AccessDummy
                 Content = new StringContent(requestJson, Encoding.UTF8, "application/json")
             })
             {
-                requestMessage.Headers.Add("ApiKey", akey);
+                //requestMessage.Headers.Add("ApiKey", akey);
+                httpClient.DefaultRequestHeaders.Add("ApiKey", akey);
                 var responseMessage = httpClient.SendAsync(requestMessage).Result;
                 // TODO: Handle error cases.
                 if (!responseMessage.IsSuccessStatusCode)
@@ -83,9 +91,10 @@ namespace AccessDummy
                 var responseJson = responseMessage.Content.ReadAsStringAsync().Result;
 
                 Console.WriteLine(responseJson);
-                return responseJson;
 
+                return responseJson;
             }
         }
     }
 }
+
